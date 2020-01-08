@@ -4,18 +4,22 @@ namespace TrafficSim.PathFinding
 {
     internal sealed class MinHeapNode
     {
-        public MinHeapNode(Road road, MinHeapNode cameFrom, float costSoFar, float expectedCost)
+        public MinHeapNode(Junction junction, MinHeapNode cameFrom, Road cameVia, float costSoFar, float expectedCost)
         {
-            this.Road = road;
+            this.Junction = junction;
             this.CameFrom = cameFrom;
+            this.CameVia = cameVia;
             this.CostSoFar = costSoFar;
             this.ExpectedCost = expectedCost;
         }
 
-        public Road Road { get; }
-        public MinHeapNode CameFrom { get; set; }
-        public float CostSoFar { get; set; }
-        public float ExpectedCost { get; set; }
+        public Junction Junction { get; }
+        public MinHeapNode CameFrom { get; }
+        public Road CameVia { get; }
+        public float CostSoFar { get; }
+        public float ExpectedCost { get; }
         public MinHeapNode Next { get; set; }
+
+        public override string ToString() => $"📍{this.Junction.Position}, ⏱{this.ExpectedCost}";
     }
 }

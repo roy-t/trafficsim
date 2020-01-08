@@ -6,81 +6,77 @@ namespace TrafficSim.PathFinding
 {
     public static class PathFinder
     {
-        public static IReadOnlyList<Road> FindPath(Road from, Road to)
+        public static PathFinderResult FindPath(Junction start, Junction goal)
         {
-            if (from == to)
+            if (start == goal)
             {
-                return new List<Road> { from };
+                return new PathFinderResult(new List<Road>(), 0.0f);
             }
 
-            var all = new Dictionary<Road, MinHeapNode>();
-
-            var head = new MinHeapNode(from, null, TraversalCost(from), ExpectedCost(from, to));
             var open = new MinHeap();
+            var nodes = new Dictionary<Junction, MinHeapNode>();
 
+            var head = new MinHeapNode(start, null, null, 0, ExpectedCost(start, goal));
             open.Push(head);
-            all.Add(head.Road, head);
+            nodes.Add(head.Junction, head);
 
-
-            while (open.HasNext())
+            while (open.HasNext)
             {
                 var current = open.Pop();
-                if (current.Road == to)
+                if (current.Junction == goal)
                 {
                     return ReconstructPath(current);
                 }
 
-                for (var i = 0; i < current.Road.EndJunction.Outgoing.Count; i++)
+                foreach (var road in current.Junction.Outgoing)
                 {
-                    Step(current, current.Road.EndJunction.Outgoing[i], to, all, open);
-                }
+                    var nextJunction = GetOpposite(current.Junction, road);
+                    var costSoFar = current.CostSoFar + TraversalCost(road);
 
-                if (current.Road.RoadType == RoadType.TwoWay)
-                {
-                    for (var i = 0; i < current.Road.StartJunction.Outgoing.Count; i++)
+                    if (nodes.TryGetValue(nextJunction, out var node))
                     {
-                        Step(current, current.Road.StartJunction.Outgoing[i], to, all, open);
+                        if (node.CostSoFar > costSoFar)
+                        {
+                            node = new MinHeapNode(nextJunction, current, road, costSoFar, costSoFar + ExpectedCost(nextJunction, goal));
+                            open.Push(node);
+                            nodes[nextJunction] = node;
+                        }
+                    }
+                    else
+                    {
+                        node = new MinHeapNode(nextJunction, current, road, costSoFar, costSoFar + ExpectedCost(nextJunction, goal));
+                        open.Push(node);
+                        nodes.Add(node.Junction, node);
                     }
                 }
             }
 
-            return new List<Road>();
+            return new PathFinderResult();
         }
 
-        private static void Step(MinHeapNode path, Road road, Road goal, Dictionary<Road, MinHeapNode> nodes, MinHeap open)
+        private static Junction GetOpposite(Junction from, Road road)
         {
-            var nodeCostSoFar = path.CostSoFar + TraversalCost(path.Road);
-            if (nodes.TryGetValue(road, out var node))
+            if (road.StartJunction == from)
             {
-                if (node.CostSoFar > nodeCostSoFar)
-                {
-                    node.CostSoFar = nodeCostSoFar;
-                    node.CameFrom = path;
-                    node.ExpectedCost = nodeCostSoFar + ExpectedCost(road, goal);
-                    open.Push(node);
-                }
+                return road.EndJunction;
             }
-            else
-            {
-                node = new MinHeapNode(road, path, nodeCostSoFar, nodeCostSoFar + ExpectedCost(road, goal));
-                nodes.Add(road, node);
-                open.Push(node);
-            }
+
+            return road.StartJunction;
         }
 
-        private static IReadOnlyList<Road> ReconstructPath(MinHeapNode node)
+        private static PathFinderResult ReconstructPath(MinHeapNode node)
         {
             var path = new List<Road>();
 
             var current = node;
-            while (current != null)
+            while (current != null && current.CameVia != null)
             {
-                path.Add(current.Road);
+                path.Add(current.CameVia);
                 current = current.CameFrom;
             }
 
             path.Reverse();
-            return path;
+            return new PathFinderResult(path, node.CostSoFar);
         }
 
         private static float TraversalCost(Road road)
@@ -90,11 +86,11 @@ namespace TrafficSim.PathFinding
         {
             var length = Vector2.Distance(start, end);
 
-            var metersPerSecond = (kmph / 60 / 60) / 1000;
+            var metersPerSecond = (kmph * 1000) / 60 / 60;
 
             return length / metersPerSecond;
         }
 
-        private static float ExpectedCost(Road from, Road to) => TraversalCost(from.End, to.Start, Road.MaxSpeed);
+        private static float ExpectedCost(Junction from, Junction to) => TraversalCost(from.Position, to.Position, Road.MaxSpeedLimit);
     }
 }

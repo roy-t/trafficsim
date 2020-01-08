@@ -10,14 +10,7 @@ namespace TrafficSim
     {
         private const float radius = 0.05f;
 
-        private static readonly Color HighlightColor = Color.Red;
-
-        private static readonly Color[] Colors = new Color[]
-        {
-            Color.Blue,
-            Color.Green,
-            Color.Black
-        };
+        private static readonly Color HighlightColor = Color.White;
 
         private readonly BasicEffect Effect;
         private readonly List<Road> Roads;
@@ -73,12 +66,11 @@ namespace TrafficSim
             this.vertices = new VertexPositionColor[vertexCount];
             this.indices = new short[vertexCount];
 
-            var colorIndex = 0;
             short vertexIndex = 0;
             for (var i = 0; i < this.Roads.Count; i++)
             {
                 var road = this.Roads[i];
-                var color = this.HighlightedRoads.Contains(road) ? HighlightColor : Colors[colorIndex++ % Colors.Length];
+                var color = this.HighlightedRoads.Contains(road) ? HighlightColor : GetRoadColor(road);
 
                 this.indices[vertexIndex] = vertexIndex;
                 this.vertices[vertexIndex++] = new VertexPositionColor(new Vector3(road.Start.X, 0, road.Start.Y), color);
@@ -91,16 +83,25 @@ namespace TrafficSim
             }
         }
 
+        private static Color GetRoadColor(Road road)
+        {
+            var range = Road.MaxSpeedLimit - Road.MinSpeedLimit;
+            var value = (road.SpeedLimit - Road.MinSpeedLimit) / range;
+
+            return Color.Lerp(Color.Red, Color.Green, value);
+        }
+
         public void Clear()
         {
             this.Roads.Clear();
-            this.ClearHighLights();
+            this.HighlightedRoads.Clear();
             this.Rebuild();
         }
 
         public void ClearHighLights()
         {
             this.HighlightedRoads.Clear();
+            this.Rebuild();
         }
 
         public IReadOnlyList<Road> All() => this.Roads;
@@ -131,8 +132,11 @@ namespace TrafficSim
 
         public void Draw()
         {
-            this.Effect.CurrentTechnique.Passes[0].Apply();
-            this.Effect.GraphicsDevice.DrawUserIndexedPrimitives(PrimitiveType.LineList, this.vertices, 0, this.vertices.Length, this.indices, 0, this.indices.Length / 2);
+            if (this.vertices.Length > 0)
+            {
+                this.Effect.CurrentTechnique.Passes[0].Apply();
+                this.Effect.GraphicsDevice.DrawUserIndexedPrimitives(PrimitiveType.LineList, this.vertices, 0, this.vertices.Length, this.indices, 0, this.indices.Length / 2);
+            }
         }
     }
 }

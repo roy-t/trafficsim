@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using TrafficSim.Extensions;
 using TrafficSim.Network;
 using TrafficSim.PathFinding;
 using TrafficUI;
@@ -19,6 +19,7 @@ namespace TrafficSim
         private ImGuiRenderer gui;
 
         private int currentItem;
+        private PathFinderResult pathFinderResult;
 
         public GameLoop()
         {
@@ -41,44 +42,63 @@ namespace TrafficSim
             this.gui = new ImGuiRenderer(this, new UIEffect(uiEffect));
             this.networkVisualization = new NetworkVisualization(this.GraphicsDevice);
 
-            this.GenerateRoad();
+            this.GenerateManhattan();
 
             base.LoadContent();
         }
 
-
-        private void GenerateRoad()
+        private void GenerateManhattan()
         {
             var random = new Random();
 
-            var parts = random.Next(3, 15);
+            var offset = new Vector2(-3.75f, -3.75f);
 
-            var start = new Road(new Vector2(0, -3.75f), new Vector2(0, -2.75f));
-            this.networkVisualization.Add(start);
+            var columns = 10;
+            var rows = 8;
+            var junctions = new Junction[columns, rows];
 
-            var queue = new Queue<Road>();
-            queue.Enqueue(start);
-            for (var i = 0; i < parts; i++)
+            for (var x = 0; x < columns; x++)
             {
-                var previous = queue.Dequeue();
-
-                var angle = (random.NextDouble() * MathHelper.PiOver2) + MathHelper.PiOver4;
-
-                var x = (float)Math.Cos(angle);
-                var y = (float)Math.Sin(angle);
-
-                var next = previous.Add(previous.End + new Vector2(x, y));
-                this.networkVisualization.Add(next);
-
-                if (random.NextDouble() > 0.5)
+                for (var y = 0; y < rows; y++)
                 {
-                    var alt = previous.Add(previous.End + new Vector2(-x, y));
-                    this.networkVisualization.Add(alt);
-                    queue.Enqueue(alt);
-                    i++;
+                    junctions[x, y] = new Junction(offset + new Vector2(x, y));
                 }
+            }
 
-                queue.Enqueue(next);
+            for (var x = 0; x < columns - 1; x++)
+            {
+                for (var y = 0; y < rows - 1; y++)
+                {
+                    if (random.NextBool(0.9f))
+                    {
+                        var a = junctions[x, y].ConnectWith(junctions[x + 1, y], random.NextFloat(Road.MinSpeedLimit, Road.MaxSpeedLimit));
+                        this.networkVisualization.Add(a);
+                    }
+
+                    if (random.NextBool(0.8f))
+                    {
+                        var b = junctions[x, y].ConnectWith(junctions[x, y + 1], random.NextFloat(Road.MinSpeedLimit, Road.MaxSpeedLimit));
+                        this.networkVisualization.Add(b);
+                    }
+                }
+            }
+
+            for (var x = 0; x < columns - 1; x++)
+            {
+                if (random.NextBool(0.8f))
+                {
+                    var c = junctions[x, rows - 1].ConnectWith(junctions[x + 1, rows - 1], random.NextFloat(Road.MinSpeedLimit, Road.MaxSpeedLimit));
+                    this.networkVisualization.Add(c);
+                }
+            }
+
+            for (var y = 0; y < rows - 1; y++)
+            {
+                if (random.NextBool(0.8f))
+                {
+                    var c = junctions[columns - 1, y].ConnectWith(junctions[columns - 1, y + 1], random.NextFloat(Road.MinSpeedLimit, Road.MaxSpeedLimit));
+                    this.networkVisualization.Add(c);
+                }
             }
         }
 
@@ -110,11 +130,11 @@ namespace TrafficSim
 
                 if (ImGui.Begin("Network Overview"))
                 {
-                    if (ImGui.Button("Generate"))
+                    if (ImGui.Button("Generate Grid"))
                     {
                         this.networkVisualization.Clear();
                         this.currentItem = 0;
-                        this.GenerateRoad();
+                        this.GenerateManhattan();
                     }
 
                     var roads = this.networkVisualization.All();
@@ -127,11 +147,21 @@ namespace TrafficSim
                     if (ImGui.Button("Plan Route"))
                     {
                         this.networkVisualization.ClearHighLights();
-                        var path = PathFinder.FindPath(roads[0], roads[this.currentItem]);
-                        for (var i = 0; i < path.Count; i++)
+                        this.pathFinderResult = PathFinder.FindPath(roads[0].StartJunction, roads[this.currentItem].StartJunction);
+                        if (this.pathFinderResult.FoundPath)
                         {
-                            this.networkVisualization.Highlight(path[i]);
+                            for (var i = 0; i < this.pathFinderResult.Path.Count; i++)
+                            {
+                                this.networkVisualization.Highlight(this.pathFinderResult.Path[i]);
+                            }
                         }
+                    }
+
+                    if (this.pathFinderResult != null && this.pathFinderResult.FoundPath)
+                    {
+                        ImGui.Text($"Cost: {this.pathFinderResult.Cost}s");
+                        ImGui.Text($"Steps: {this.pathFinderResult.Path.Count}");
+                        ImGui.Text($"Average Speed: {this.pathFinderResult.Path.Average(x => x.SpeedLimit):F2}Km/h");
                     }
 
                     ImGui.End();

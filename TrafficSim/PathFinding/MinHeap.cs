@@ -10,7 +10,7 @@
         /// <summary>
         /// If the heap has a next element
         /// </summary>        
-        public bool HasNext() => this.head != null;
+        public bool HasNext => this.head != null;
 
         /// <summary>
         /// Pushes a node onto the heap        
@@ -41,7 +41,6 @@
         }
 
         public void Clear() => this.head = null;
-
 
         /// <summary>
         /// Pops a node from the heap, this node is always the node

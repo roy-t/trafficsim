@@ -49,12 +49,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions\RandomExtensions.cs" />
     <Compile Include="GameLoop.cs" />
     <Compile Include="Network\Junction.cs" />
+    <Compile Include="Network\RoadPositionComparer.cs" />
     <Compile Include="Network\RoadType.cs" />
     <Compile Include="PathFinding\MinHeap.cs" />
     <Compile Include="PathFinding\MinHeapNode.cs" />
     <Compile Include="PathFinding\PathFinder.cs" />
+    <Compile Include="PathFinding\PathFinderResult.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Network\Road.cs" />

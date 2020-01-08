@@ -8,19 +8,28 @@ namespace TrafficSim.Network
         public Junction(Vector2 position)
         {
             this.Position = position;
-            this.Incoming = new List<Road>(0);
-            this.Outgoing = new List<Road>(0);
+            this.Incoming = new HashSet<Road>(0, RoadPositionComparer.Instance);
+            this.Outgoing = new HashSet<Road>(0, RoadPositionComparer.Instance);
         }
 
         public Vector2 Position { get; }
 
-        public List<Road> Incoming { get; }
-        public List<Road> Outgoing { get; }
+        public HashSet<Road> Incoming { get; }
+        public HashSet<Road> Outgoing { get; }
 
-        public void AddTwoWayConnection(Road road)
+        public Road ConnectWith(Junction other, float speedLimit = Road.DefaultSpeedLimit, RoadType type = RoadType.TwoWay)
         {
-            this.Incoming.Add(road);
+            var road = new Road(this, other, speedLimit, type);
             this.Outgoing.Add(road);
+            other.Incoming.Add(road);
+
+            if (type == RoadType.TwoWay)
+            {
+                this.Incoming.Add(road);
+                other.Outgoing.Add(road);
+            }
+
+            return road;
         }
     }
 }

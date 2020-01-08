@@ -4,14 +4,16 @@ namespace TrafficSim.Network
 {
     public sealed class Road
     {
-        public const float MaxSpeed = 120;
-        public const float MinSpeed = 30;
+        public const float MaxSpeedLimit = 120;
+        public const float DefaultSpeedLimit = 50;
+        public const float MinSpeedLimit = 30;
 
 
-        public Road(Vector2 start, Vector2 end, RoadType roadType = RoadType.TwoWay)
+        public Road(Junction start, Junction end, float speedLimit = DefaultSpeedLimit, RoadType roadType = RoadType.TwoWay)
         {
-            this.StartJunction = new Junction(start);
-            this.EndJunction = new Junction(end);
+            this.StartJunction = start;
+            this.EndJunction = end;
+            this.SpeedLimit = speedLimit;
             this.RoadType = roadType;
         }
 
@@ -24,17 +26,8 @@ namespace TrafficSim.Network
         /// <summary>
         /// In KM/h
         /// </summary>
-        public float SpeedLimit => 50;
+        public float SpeedLimit { get; }
 
         public RoadType RoadType { get; }
-
-        public Road Add(Vector2 end)
-        {
-            var road = new Road(this.End, end);
-            this.EndJunction.AddTwoWayConnection(road);
-            road.StartJunction.AddTwoWayConnection(this);
-
-            return road;
-        }
     }
 }
