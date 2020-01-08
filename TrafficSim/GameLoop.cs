@@ -6,6 +6,8 @@ using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using TrafficSim.Network;
+using TrafficSim.PathFinding;
 using TrafficUI;
 
 namespace TrafficSim
@@ -13,7 +15,6 @@ namespace TrafficSim
     public sealed class GameLoop : Game
     {
         private readonly GraphicsDeviceManager Graphics;
-        private PathFinder pathFinder;
         private NetworkVisualization networkVisualization;
         private ImGuiRenderer gui;
 
@@ -38,7 +39,6 @@ namespace TrafficSim
         {
             var uiEffect = this.Content.Load<Effect>("UIEffect");
             this.gui = new ImGuiRenderer(this, new UIEffect(uiEffect));
-            this.pathFinder = new PathFinder();
             this.networkVisualization = new NetworkVisualization(this.GraphicsDevice);
 
             this.GenerateRoad();
@@ -67,12 +67,12 @@ namespace TrafficSim
                 var x = (float)Math.Cos(angle);
                 var y = (float)Math.Sin(angle);
 
-                var next = new Road(previous.End, previous.End + new Vector2(x, y));
+                var next = previous.Add(previous.End + new Vector2(x, y));
                 this.networkVisualization.Add(next);
 
                 if (random.NextDouble() > 0.5)
                 {
-                    var alt = new Road(previous.End, previous.End + new Vector2(-x, y));
+                    var alt = previous.Add(previous.End + new Vector2(-x, y));
                     this.networkVisualization.Add(alt);
                     queue.Enqueue(alt);
                     i++;
@@ -127,7 +127,7 @@ namespace TrafficSim
                     if (ImGui.Button("Plan Route"))
                     {
                         this.networkVisualization.ClearHighLights();
-                        var path = this.pathFinder.FindPath(roads[0], roads[this.currentItem]);
+                        var path = PathFinder.FindPath(roads[0], roads[this.currentItem]);
                         for (var i = 0; i < path.Count; i++)
                         {
                             this.networkVisualization.Highlight(path[i]);
