@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{E8944FCA-5827-4383-9216-1C682FAB0837}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <RootNamespace>TrafficSim</RootNamespace>
     <AssemblyName>TrafficSim</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
@@ -35,6 +35,9 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -47,8 +50,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GameLoop.cs" />
+    <Compile Include="PathFinder.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Road.cs" />
+    <Compile Include="NetworkVisualization.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -59,13 +65,13 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\UIEffect.fx" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\TrafficUI\TrafficUI.csproj">
       <Project>{68deebab-f86d-4b27-9e98-69590859ed20}</Project>
       <Name>TrafficUI</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Content\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
